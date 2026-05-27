@@ -1145,11 +1145,13 @@ def _generate_jingcai_recommendations(
         })
 
     # ── 3. 让球胜平负 recommendation ────────────────────────────────────
-    # Determine integer handicap direction from model
-    handicap_line = _determine_jingcai_handicap(home_p, draw_p, away_p, league_baseline)
-    if handicap_line:
+    # Use actual 竞彩 handicap lines if provided, otherwise auto-estimate
+    handicap_lines = ctx.jingcai_handicaps or _determine_jingcai_handicaps(
+        home_p, draw_p, away_p, league_baseline
+    )
+    for hline in handicap_lines:
         hcp_rec = _build_jingcai_handicap_rec(
-            handicap_line, home_p, draw_p, away_p, ctx
+            hline, home_p, draw_p, away_p, ctx
         )
         if hcp_rec:
             jc_recs.append(hcp_rec)
@@ -1177,43 +1179,54 @@ def _generate_jingcai_recommendations(
     return jc_recs
 
 
-def _determine_jingcai_handicap(
+def _determine_jingcai_handicaps(
     home_p: float,
     draw_p: float,
     away_p: float,
     baseline: dict,
-) -> Optional[str]:
+) -> list[str]:
     """
-    Determine the most appropriate 竞彩 integer handicap line.
+    Determine the likely 竞彩 integer handicap lines for this match.
 
-    竞彩 only offers integer handicaps: -1, -2, +1, +2.
-    Maps model probabilities to the closest integer handicap.
+    竞彩 integer handicaps: -3, -2, -1, +1, +2, +3.
+    Returns all handicap lines that could plausibly be offered,
+    sorted by relevance (most likely first).
 
-    Returns handicap string like "-1", "+1", or None if no clear signal.
+    Logic: the wider the gap between home/away probabilities, the
+    larger the handicap line 竞彩 will set.
     """
-    # Strong home favorite → likely -1 handicap
-    if home_p > 0.55:
-        return "-1"
-    # Moderate home favorite
-    elif home_p > 0.48:
-        nd = home_p - away_p
-        if nd > 0.12:
-            return "-1"
-        else:
-            return None  # Too close for handicap
-    # Balanced → home -1 or away +1 depending on market convention
-    elif abs(home_p - away_p) < 0.08:
-        # Near-even → home usually gives -1 in 竞彩
+    gap = home_p - away_p
+    lines: list[str] = []
+
+    if gap > 0.50:
+        # Dominant home favorite — 竞彩 likely offers -2 and -1
+        lines = ["-2", "-1"]
+    elif gap > 0.60:
+        lines = ["-3", "-2", "-1"]
+    elif gap > 0.25:
+        lines = ["-1"]
+        if gap > 0.40:
+            lines.append("-2")
+    elif gap > 0.05:
+        lines = ["-1"]
+    elif gap > -0.05:
+        # Near-even
         if home_p > away_p:
-            return "-1"
+            lines = ["-1"]
         else:
-            return "+1"
-    # Away favorite
-    elif away_p > 0.48:
-        return "+1"
-    elif away_p > 0.55:
-        return "+1"
-    return None
+            lines = ["+1"]
+    elif gap > -0.25:
+        lines = ["+1"]
+    elif gap > -0.40:
+        lines = ["+1", "+2"]
+    elif gap > -0.50:
+        lines = ["+1", "+2"]
+    else:
+        lines = ["+2", "+1"]
+        if gap < -0.60:
+            lines = ["+3", "+2", "+1"]
+
+    return lines
 
 
 def _build_jingcai_handicap_rec(
@@ -1223,33 +1236,31 @@ def _build_jingcai_handicap_rec(
     away_p: float,
     ctx: MatchContext,
 ) -> Optional[dict]:
-    """Build a 让球胜平负 recommendation dict."""
+    """Build a 让球胜平负 recommendation dict for any integer handicap."""
     hcp_int = int(handicap_line)
+    margin = abs(hcp_int) + 1  # goals needed to "cover": -1 needs 2+, -2 needs 3+
 
-    # Calculate probabilities under the handicap
-    # For -1: home must win by 2+ for 让胜; win by exactly 1 for 让平; else 让负
-    # For +1: away must win by 2+ for 让胜(away); else 让平/让负
-    if hcp_int < 0:  # Home gives handicap, e.g., -1
-        margin = abs(hcp_int)
-        home_by_2plus = home_p * 0.35
-        home_by_1 = home_p * 0.30
-        non_home_cover = away_p + draw_p + (home_p * 0.35)
+    # Fraction of favored-team wins that cover vs land exactly on the line.
+    # Larger margins → smaller fractions (exponentially decaying).
+    _cover_factor = {2: 0.35, 3: 0.15, 4: 0.05}  # win by N+ goals
+    _exact_factor = {2: 0.30, 3: 0.13, 4: 0.04}  # win by exactly N goals
 
-        total = home_by_2plus + home_by_1 + non_home_cover
-        if total > 0:
-            rang_sheng = home_by_2plus / total
-            rang_ping = home_by_1 / total
-            rang_fu = non_home_cover / total
-        else:
+    if hcp_int < 0:  # Home gives handicap, e.g., -1, -2
+        required = margin  # home must win by 'required' goals for 让胜
+        cf = _cover_factor.get(required, 0.03)
+        ef = _exact_factor.get(required, 0.02)
+
+        home_cover = home_p * cf       # 让胜: home wins by required+
+        home_exact = home_p * ef       # 让平: home wins by exactly required
+        non_cover = away_p + draw_p + (home_p * (1 - cf - ef))  # 让负
+
+        total = home_cover + home_exact + non_cover
+        if total <= 0:
             return None
 
-        # For -1 handicap:
-        #   让胜 (home wins by 2+): rang_sheng
-        #   让平 (home wins by exactly 1): rang_ping
-        #   让负 (home doesn't win by 2+): rang_fu
-        # The "covering" bet is 让负 (home won't cover -1).
-        # Never pair 让胜 + 让负 (they're contradictory).
-        # Smart double = 让负 + 让平 (covers all non-2+-margin cases) OR 让胜 single pick if home is dominant.
+        rang_sheng = home_cover / total
+        rang_ping = home_exact / total
+        rang_fu = non_cover / total
 
         sides = [
             ("让胜", rang_sheng),
@@ -1258,7 +1269,6 @@ def _build_jingcai_handicap_rec(
         ]
         sides.sort(key=lambda x: x[1], reverse=True)
 
-        # If highest is 让负 (covering side), pair it with 让平 for a safe double
         if sides[0][0] == "让负":
             selection = f"让负 + 让平 (双选)"
             combined_prob = rang_fu + rang_ping
@@ -1269,15 +1279,14 @@ def _build_jingcai_handicap_rec(
             )
             primary = "让负+让平"
         elif sides[0][0] == "让胜" and sides[0][1] > 0.45:
-            selection = "让胜 (单挑)"
+            selection = f"让胜 (单挑)"
             combined_prob = rang_sheng
             rationale = (
                 f"模型{ctx.home_team}让{hcp_int}球下，"
-                f"净胜{margin}+球概率{rang_sheng:.1%}，可单挑"
+                f"净胜{required}+球概率{rang_sheng:.1%}，可单挑"
             )
             primary = "让胜"
         else:
-            # Pair the top non-contradictory options
             selection = f"让负 + 让平 (双选)"
             combined_prob = rang_fu + rang_ping
             rationale = (
@@ -1288,30 +1297,23 @@ def _build_jingcai_handicap_rec(
             primary = "让负+让平"
 
         confidence = "A-" if combined_prob > 0.75 else ("B+" if combined_prob > 0.60 else "B")
-        return {
-            "market": "让球胜平负",
-            "handicap_line": handicap_line,
-            "selection": selection,
-            "primary_pick": primary,
-            "model_probability": round(combined_prob, 3),
-            "rationale": rationale,
-            "confidence": confidence,
-        }
 
-    else:  # Away gives handicap, e.g., +1 (home receives +1)
-        # Home +1 means: home win or draw → 让胜; home lose by exactly 1 → 让平; home lose by 2+ → 让负
-        # With +1, home almost never loses by 2+ → 让胜 is highly probable
-        home_cover = home_p + draw_p  # home doesn't lose by 2+
-        away_by_2plus = away_p * 0.2
-        away_by_1 = away_p * 0.3
+    else:  # Away gives handicap, e.g., +1, +2 (home receives +hcp_int)
+        required = margin
+        cf = _cover_factor.get(required, 0.03)
+        ef = _exact_factor.get(required, 0.02)
 
-        total = home_cover + away_by_1 + away_by_2plus
-        if total > 0:
-            rang_sheng = home_cover / total
-            rang_ping = away_by_1 / total
-            rang_fu = away_by_2plus / total
-        else:
+        away_cover = away_p * cf
+        away_exact = away_p * ef
+        home_not_lose_by_required = home_p + draw_p + (away_p * (1 - cf - ef))
+
+        total = home_not_lose_by_required + away_exact + away_cover
+        if total <= 0:
             return None
+
+        rang_sheng = home_not_lose_by_required / total  # 让胜: home doesn't lose by required+
+        rang_ping = away_exact / total                     # 让平: home loses by exactly required
+        rang_fu = away_cover / total                      # 让负: home loses by required+
 
         sides = [
             ("让胜", rang_sheng),
@@ -1332,6 +1334,16 @@ def _build_jingcai_handicap_rec(
             ),
             "confidence": "A-" if sides[0][1] > 0.55 else ("B+" if sides[0][1] > 0.45 else "B"),
         }
+
+    return {
+        "market": "让球胜平负",
+        "handicap_line": handicap_line,
+        "selection": selection,
+        "primary_pick": primary,
+        "model_probability": round(combined_prob, 3),
+        "rationale": rationale,
+        "confidence": confidence,
+    }
 
 
 # ── Chief Analyst / Final Integration ────────────────────────────────────────

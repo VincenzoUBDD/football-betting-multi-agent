@@ -606,6 +606,8 @@ class MatchContext(BaseModel):
     weather_forecast: Optional[str] = None
     opening_odds: Optional[OpeningOdds] = None
     current_odds: Optional[CurrentOdds] = None
+    # Actual 竞彩 handicap lines (fixed at market open). If empty, auto-estimate.
+    jingcai_handicaps: list[str] = Field(default_factory=list)
 
 
 class PipelineResult(BaseModel):
