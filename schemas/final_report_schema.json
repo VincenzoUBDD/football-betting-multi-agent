@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Final Report Schema",
+  "description": "Chief Analyst final integrated report output schema",
+  "type": "object",
+  "required": [
+    "report_id", "match_id", "timestamp", "match_overview",
+    "market_odds_analysis", "quantitative_projection",
+    "tactical_matchup", "team_news", "market_sentiment",
+    "historical_analysis", "risk_assessment",
+    "betting_recommendation", "confidence_rating", "final_verdict"
+  ],
+  "properties": {
+    "report_id": { "type": "string" },
+    "match_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "match_overview": {
+      "type": "object",
+      "required": ["home_team", "away_team", "league", "kickoff", "competition_level"],
+      "properties": {
+        "home_team": { "type": "string" },
+        "away_team": { "type": "string" },
+        "league": { "type": "string" },
+        "kickoff": { "type": "string" },
+        "competition_level": { "type": "string" },
+        "venue": { "type": "string" },
+        "weather_forecast": { "type": "string" }
+      }
+    },
+    "market_odds_analysis": {
+      "type": "object",
+      "required": ["best_odds", "market_consensus", "odds_movement_summary"],
+      "properties": {
+        "best_odds": {
+          "type": "object",
+          "properties": {
+            "home": { "type": "number" },
+            "draw": { "type": "number" },
+            "away": { "type": "number" }
+          }
+        },
+        "market_consensus": { "type": "string" },
+        "odds_movement_summary": { "type": "string" },
+        "sharp_money_indication": { "type": "string" },
+        "trap_risk": { "type": "string" }
+      }
+    },
+    "quantitative_projection": {
+      "type": "object",
+      "required": ["ensemble_home_prob", "ensemble_draw_prob", "ensemble_away_prob"],
+      "properties": {
+        "ensemble_home_prob": { "type": "number" },
+        "ensemble_draw_prob": { "type": "number" },
+        "ensemble_away_prob": { "type": "number" },
+        "expected_goals_total": { "type": "number" },
+        "most_likely_score": { "type": "string" },
+        "value_bets_identified": { "type": "array", "items": { "type": "string" } },
+        "model_std_dev": { "type": "number" }
+      }
+    },
+    "tactical_matchup": {
+      "type": "object",
+      "properties": {
+        "advantage": { "type": "string" },
+        "key_battle": { "type": "string" },
+        "predicted_tempo": { "type": "string" },
+        "goal_impact": { "type": "string" }
+      }
+    },
+    "team_news": {
+      "type": "object",
+      "required": ["critical_absences", "fatigue_assessment", "motivation_score"],
+      "properties": {
+        "critical_absences": { "type": "array", "items": { "type": "string" } },
+        "fatigue_assessment": { "type": "string" },
+        "motivation_score": { "type": "string" },
+        "rotation_risk": { "type": "string" }
+      }
+    },
+    "market_sentiment": {
+      "type": "object",
+      "properties": {
+        "public_bias": { "type": "string" },
+        "contrarian_signal": { "type": "boolean" },
+        "overheating_warning": { "type": "string" }
+      }
+    },
+    "historical_analysis": {
+      "type": "object",
+      "properties": {
+        "h2h_summary": { "type": "string" },
+        "similar_odds_pattern": { "type": "string" },
+        "referee_impact": { "type": "string" }
+      }
+    },
+    "risk_assessment": {
+      "type": "object",
+      "required": ["overall_risk", "betting_recommendation", "stake_suggestion"],
+      "properties": {
+        "overall_risk": { "type": "string" },
+        "volatility": { "type": "string" },
+        "model_conflicts": { "type": "array", "items": { "type": "string" } },
+        "betting_recommendation": { "type": "string" },
+        "stake_suggestion": { "type": "string" },
+        "no_bet_reason": { "type": "string" }
+      }
+    },
+    "betting_recommendation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["market", "selection", "odds", "stake_percent", "rationale"],
+        "properties": {
+          "market": { "type": "string" },
+          "selection": { "type": "string" },
+          "odds": { "type": "number" },
+          "stake_percent": { "type": "number" },
+          "rationale": { "type": "string" },
+          "expected_value": { "type": "number" },
+          "alternative_market": { "type": "string" }
+        }
+      }
+    },
+    "confidence_rating": {
+      "type": "string",
+      "enum": ["S", "A+", "A", "B+", "B", "C", "D"]
+    },
+    "final_verdict": {
+      "type": "object",
+      "required": ["action", "summary"],
+      "properties": {
+        "action": { "type": "string", "enum": ["BET", "NO_BET", "TRACK", "HEDGE"] },
+        "summary": { "type": "string" },
+        "primary_recommendation": { "type": "string" },
+        "risk_disclaimer": { "type": "string" }
+      }
+    },
+    "agent_contributions": {
+      "type": "object",
+      "description": "Summary of each agent's key input",
+      "properties": {
+        "odds_agent_key": { "type": "string" },
+        "quant_agent_key": { "type": "string" },
+        "tactical_agent_key": { "type": "string" },
+        "news_agent_key": { "type": "string" },
+        "sentiment_agent_key": { "type": "string" },
+        "historical_agent_key": { "type": "string" },
+        "risk_agent_key": { "type": "string" },
+        "referee_agent_key": { "type": "string" },
+        "sharp_money_agent_key": { "type": "string" }
+      }
+    }
+  }
+}

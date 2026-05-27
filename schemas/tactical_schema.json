@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tactical Agent Output Schema",
+  "description": "Standardized output schema for the Tactical Analysis Agent",
+  "type": "object",
+  "required": [
+    "agent_name", "match_id", "timestamp", "core_prediction",
+    "tactical_advantage", "tempo_prediction", "pressing_matchup",
+    "transition_risk", "set_piece_edge", "formation_interaction"
+  ],
+  "properties": {
+    "agent_name": { "type": "string", "const": "TacticalAgent" },
+    "match_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "core_prediction": { "type": "string" },
+    "tactical_advantage": {
+      "type": "string",
+      "enum": ["STRONG_HOME", "MODERATE_HOME", "NEUTRAL", "MODERATE_AWAY", "STRONG_AWAY"]
+    },
+    "tempo_prediction": {
+      "type": "object",
+      "properties": {
+        "expected_tempo": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "VERY_HIGH"] },
+        "possession_split": {
+          "type": "object",
+          "properties": {
+            "home": { "type": "number", "minimum": 0, "maximum": 100 },
+            "away": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        }
+      }
+    },
+    "pressing_matchup": {
+      "type": "object",
+      "properties": {
+        "home_pressing_style": { "type": "string" },
+        "away_pressing_style": { "type": "string" },
+        "advantage": { "type": "string" }
+      }
+    },
+    "transition_risk": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+    "set_piece_edge": { "type": "string", "enum": ["HOME", "AWAY", "NEUTRAL"] },
+    "formation_interaction": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "home_formation": { "type": "string" },
+          "away_formation": { "type": "string" },
+          "key_matchup_zone": { "type": "string" },
+          "advantage": { "type": "string" }
+        }
+      }
+    },
+    "probabilities": {
+      "type": "object",
+      "properties": {
+        "tactical_edge_home": { "type": "number" },
+        "tactical_edge_away": { "type": "number" }
+      }
+    },
+    "confidence": { "type": "string", "enum": ["S", "A+", "A", "B+", "B", "C", "D"] },
+    "risk_level": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "EXTREME"] },
+    "key_factors": { "type": "array", "items": { "type": "string" } },
+    "supporting_evidence": { "type": "array", "items": { "type": "string" } },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "market_implications": { "type": "array", "items": { "type": "string" } },
+    "recommended_actions": { "type": "array", "items": { "type": "string" } },
+    "avoid_signals": { "type": "array", "items": { "type": "string" } },
+    "uncertainty_notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

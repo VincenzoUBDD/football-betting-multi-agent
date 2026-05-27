@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Odds Agent Output Schema",
+  "description": "Standardized output schema for the Odds Analysis Agent",
+  "type": "object",
+  "required": [
+    "agent_name", "match_id", "timestamp", "core_prediction",
+    "probabilities", "confidence", "risk_level", "opening_odds",
+    "current_odds", "odds_movement", "market_bias",
+    "bookmaker_intention", "trap_risk", "sharp_side"
+  ],
+  "properties": {
+    "agent_name": { "type": "string", "const": "OddsAgent" },
+    "match_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "core_prediction": { "type": "string" },
+    "probabilities": {
+      "type": "object",
+      "required": ["market_implied_home", "market_implied_draw", "market_implied_away"],
+      "properties": {
+        "market_implied_home": { "type": "number", "minimum": 0, "maximum": 1 },
+        "market_implied_draw": { "type": "number", "minimum": 0, "maximum": 1 },
+        "market_implied_away": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["S", "A+", "A", "B+", "B", "C", "D"]
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "EXTREME"]
+    },
+    "opening_odds": {
+      "type": "object",
+      "required": ["home", "draw", "away", "over_25", "under_25"],
+      "properties": {
+        "home": { "type": "number" },
+        "draw": { "type": "number" },
+        "away": { "type": "number" },
+        "over_25": { "type": "number" },
+        "under_25": { "type": "number" },
+        "asian_handicap_line": { "type": "number" },
+        "asian_handicap_home_odds": { "type": "number" },
+        "asian_handicap_away_odds": { "type": "number" }
+      }
+    },
+    "current_odds": {
+      "type": "object",
+      "required": ["home", "draw", "away"],
+      "properties": {
+        "home": { "type": "number" },
+        "draw": { "type": "number" },
+        "away": { "type": "number" },
+        "over_25": { "type": "number" },
+        "under_25": { "type": "number" },
+        "asian_handicap_line": { "type": "number" },
+        "asian_handicap_home_odds": { "type": "number" },
+        "asian_handicap_away_odds": { "type": "number" }
+      }
+    },
+    "odds_movement": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["market", "direction", "magnitude", "timestamp"],
+        "properties": {
+          "market": { "type": "string" },
+          "direction": { "type": "string", "enum": ["shortening", "lengthening", "stable"] },
+          "magnitude": { "type": "number" },
+          "timestamp": { "type": "string" },
+          "interpretation": { "type": "string" }
+        }
+      }
+    },
+    "market_bias": { "type": "string" },
+    "bookmaker_intention": { "type": "string" },
+    "trap_risk": { "type": "string", "enum": ["NONE", "LOW", "MEDIUM", "HIGH"] },
+    "sharp_side": { "type": "string" },
+    "overround": { "type": "number" },
+    "kelly_index": { "type": "number" },
+    "key_factors": { "type": "array", "items": { "type": "string" } },
+    "supporting_evidence": { "type": "array", "items": { "type": "string" } },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "market_implications": { "type": "array", "items": { "type": "string" } },
+    "recommended_actions": { "type": "array", "items": { "type": "string" } },
+    "avoid_signals": { "type": "array", "items": { "type": "string" } },
+    "uncertainty_notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

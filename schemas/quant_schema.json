@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quant Model Agent Output Schema",
+  "description": "Standardized output schema for the Quantitative Model Agent",
+  "type": "object",
+  "required": [
+    "agent_name", "match_id", "timestamp", "core_prediction",
+    "home_win_probability", "draw_probability", "away_win_probability",
+    "expected_goals_home", "expected_goals_away",
+    "most_likely_scores", "value_bets", "model_disagreement"
+  ],
+  "properties": {
+    "agent_name": { "type": "string", "const": "QuantModelAgent" },
+    "match_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "core_prediction": { "type": "string" },
+    "home_win_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "draw_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "away_win_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "expected_goals_home": { "type": "number", "minimum": 0 },
+    "expected_goals_away": { "type": "number", "minimum": 0 },
+    "over25_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "under25_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "btts_yes_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "most_likely_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["score", "probability"],
+        "properties": {
+          "score": { "type": "string" },
+          "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "value_bets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["market", "fair_odds", "market_odds", "edge_percent"],
+        "properties": {
+          "market": { "type": "string" },
+          "fair_odds": { "type": "number" },
+          "market_odds": { "type": "number" },
+          "edge_percent": { "type": "number" },
+          "kelly_fraction": { "type": "number" }
+        }
+      }
+    },
+    "model_disagreement": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "models": { "type": "array", "items": { "type": "string" } },
+          "discrepancy": { "type": "string" },
+          "magnitude": { "type": "number" }
+        }
+      }
+    },
+    "poisson_lambda_home": { "type": "number" },
+    "poisson_lambda_away": { "type": "number" },
+    "elo_home": { "type": "number" },
+    "elo_away": { "type": "number" },
+    "elo_win_probability": { "type": "number" },
+    "xg_home_season_avg": { "type": "number" },
+    "xg_away_season_avg": { "type": "number" },
+    "xg_home_season_avg_conceded": { "type": "number" },
+    "xg_away_season_avg_conceded": { "type": "number" },
+    "probabilities": {
+      "type": "object",
+      "properties": {
+        "ensemble_home": { "type": "number" },
+        "ensemble_draw": { "type": "number" },
+        "ensemble_away": { "type": "number" }
+      }
+    },
+    "confidence": { "type": "string", "enum": ["S", "A+", "A", "B+", "B", "C", "D"] },
+    "risk_level": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "EXTREME"] },
+    "key_factors": { "type": "array", "items": { "type": "string" } },
+    "supporting_evidence": { "type": "array", "items": { "type": "string" } },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "market_implications": { "type": "array", "items": { "type": "string" } },
+    "recommended_actions": { "type": "array", "items": { "type": "string" } },
+    "avoid_signals": { "type": "array", "items": { "type": "string" } },
+    "uncertainty_notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

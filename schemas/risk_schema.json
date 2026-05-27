@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Risk Agent Output Schema",
+  "description": "Standardized output schema for the Risk Management Agent",
+  "type": "object",
+  "required": [
+    "agent_name", "match_id", "timestamp", "core_prediction",
+    "overall_risk_level", "volatility_score", "model_conflict",
+    "high_uncertainty_factors", "betting_recommendation", "stake_suggestion"
+  ],
+  "properties": {
+    "agent_name": { "type": "string", "const": "RiskAgent" },
+    "match_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "core_prediction": { "type": "string" },
+    "overall_risk_level": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "EXTREME"]
+    },
+    "volatility_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "model_conflict": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["agents_in_conflict", "conflict_description", "severity"],
+        "properties": {
+          "agents_in_conflict": { "type": "array", "items": { "type": "string" } },
+          "conflict_description": { "type": "string" },
+          "severity": { "type": "string", "enum": ["MINOR", "MODERATE", "MAJOR", "CRITICAL"] },
+          "resolution_possible": { "type": "boolean" }
+        }
+      }
+    },
+    "high_uncertainty_factors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["factor", "impact"],
+        "properties": {
+          "factor": { "type": "string" },
+          "impact": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "betting_recommendation": {
+      "type": "string",
+      "enum": [
+        "RECOMMENDED", "CONDITIONAL", "HEDGE_ONLY",
+        "TRACK_ONLY", "NO_BET", "AVOID"
+      ]
+    },
+    "stake_suggestion": {
+      "type": "object",
+      "properties": {
+        "max_stake_percent": { "type": "number", "minimum": 0, "maximum": 5 },
+        "kelly_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "stop_loss_triggers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "agent_consistency_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "info_completeness_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "edge_confidence_interval": {
+      "type": "object",
+      "properties": {
+        "lower_bound": { "type": "number" },
+        "upper_bound": { "type": "number" },
+        "confidence_level": { "type": "number" }
+      }
+    },
+    "probabilities": {
+      "type": "object",
+      "properties": {
+        "risk_weighted_home": { "type": "number" },
+        "risk_weighted_draw": { "type": "number" },
+        "risk_weighted_away": { "type": "number" }
+      }
+    },
+    "confidence": { "type": "string", "enum": ["S", "A+", "A", "B+", "B", "C", "D"] },
+    "risk_level": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "EXTREME"] },
+    "key_factors": { "type": "array", "items": { "type": "string" } },
+    "supporting_evidence": { "type": "array", "items": { "type": "string" } },
+    "contradictions": { "type": "array", "items": { "type": "string" } },
+    "market_implications": { "type": "array", "items": { "type": "string" } },
+    "recommended_actions": { "type": "array", "items": { "type": "string" } },
+    "avoid_signals": { "type": "array", "items": { "type": "string" } },
+    "uncertainty_notes": { "type": "array", "items": { "type": "string" } }
+  }
+}
